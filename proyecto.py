@@ -107,3 +107,62 @@ class ReproductorGUI:
         self.btn_ant = self.crear_boton("⏮️ Anterior", self.anterior, 2, 0)
         self.btn_sig = self.crear_boton("⏭️ Siguiente", self.siguiente, 2, 1)
         self.btn_eliminar = self.crear_boton("🗑️ Eliminar", self.eliminar_cancion, 3, 0)
+
+    def crear_boton(self, texto, comando, fila, columna):
+        boton = tk.Button(self.botones_frame, text=texto, command=comando,
+                          bg="#A593E0", fg="white", font=("Arial", 11, "bold"),
+                          activebackground="#8B78C6", relief="raised", bd=3,
+                          width=18, height=2)
+        boton.grid(row=fila, column=columna, padx=5, pady=5)
+        return boton
+
+    def cargar_cancion(self):
+        ruta = filedialog.askopenfilename(filetypes=[("Archivos MP3", "*.mp3")])
+        if ruta:
+            nombre_archivo = os.path.basename(ruta)
+            try:
+                duracion = int(MP3(ruta).info.length)
+            except:
+                duracion = 0
+            self.lista.agregar_cancion(nombre_archivo, "Desconocido", duracion, ruta)
+            self.actualizar_lista()
+
+    def actualizar_lista(self):
+        self.lista_box.delete(0, tk.END)
+        for c in self.lista.mostrar_lista():
+            self.lista_box.insert(tk.END, c)
+
+    def reproducir(self):
+        if self.lista.actual:
+            try:
+                pygame.mixer.music.load(self.lista.actual.ruta)
+                pygame.mixer.music.play()
+                self.label_cancion.config(text=f"🎧 Reproduciendo: {self.lista.actual.nombre}")
+                self.en_pausa = False
+                self.btn_pausa.config(text="⏸️ Pausar")
+                self.tiempo_actual = 0
+                self.total_duracion = self.lista.actual.duracion
+                self.barra_progreso.config(to=self.total_duracion)
+                if not self.actualizando:
+                    self.actualizar_progreso()
+            except:
+                messagebox.showerror("Error", "No se pudo reproducir la canción.")
+
+    def actualizar_progreso(self):
+        if pygame.mixer.music.get_busy() and not self.en_pausa:
+            self.tiempo_actual += 1
+            if self.tiempo_actual <= self.total_duracion:
+                self.barra_progreso.set(self.tiempo_actual)
+                self.label_tiempo.config(text=f"{self.formato_tiempo(self.tiempo_actual)} / {self.formato_tiempo(self.total_duracion)}")
+        self.root.after(1000, self.actualizar_progreso)
+        self.actualizando = True
+
+    def mover_barra(self, valor):
+        valor = int(valor)
+        if pygame.mixer.music.get_busy() or self.en_pausa:
+            pygame.mixer.music.play(start=valor)
+            self.tiempo_actual = valor
+            self.en_pausa = False
+            self.btn_pausa.config(text="⏸️ Pausar")
+            self.label_tiempo.config(text=f"{self.formato_tiempo(valor)} / {self.formato_tiempo(self.total_duracion)}")
+
