@@ -166,3 +166,52 @@ class ReproductorGUI:
             self.btn_pausa.config(text="⏸️ Pausar")
             self.label_tiempo.config(text=f"{self.formato_tiempo(valor)} / {self.formato_tiempo(self.total_duracion)}")
 
+    def pausar_reanudar(self):
+        if not self.lista.actual:
+            return
+        if self.en_pausa:
+            pygame.mixer.music.unpause()
+            self.label_cancion.config(text=f"🎧 Reproduciendo: {self.lista.actual.nombre}")
+            self.btn_pausa.config(text="⏸️ Pausar")
+            self.en_pausa = False
+        else:
+            pygame.mixer.music.pause()
+            self.label_cancion.config(text=f"⏸️ Pausado: {self.lista.actual.nombre}")
+            self.btn_pausa.config(text="▶️ Reanudar")
+            self.en_pausa = True
+
+    def detener(self):
+        pygame.mixer.music.stop()
+        self.label_cancion.config(text="⏹️ Reproducción detenida")
+        self.en_pausa = False
+        self.tiempo_actual = 0
+        self.barra_progreso.set(0)
+        self.label_tiempo.config(text="00:00 / 00:00")
+        self.btn_pausa.config(text="⏸️ Pausar")
+
+    def siguiente(self):
+        self.lista.avanzar()
+        self.reproducir()
+
+    def anterior(self):
+        self.lista.retroceder()
+        self.reproducir()
+
+    def eliminar_cancion(self):
+        if self.lista.actual:
+            pygame.mixer.music.stop()
+            self.lista.eliminar_cancion_actual()
+            self.actualizar_lista()
+            self.label_cancion.config(text="Canción eliminada")
+            self.barra_progreso.set(0)
+            self.label_tiempo.config(text="00:00 / 00:00")
+
+    def formato_tiempo(self, segundos):
+        minutos = segundos // 60
+        seg = segundos % 60
+        return f"{minutos:02}:{seg:02}"
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ReproductorGUI(root)
+    root.mainloop()
